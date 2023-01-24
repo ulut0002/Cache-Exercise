@@ -1,23 +1,32 @@
-import CACHE from './cache.js';
+import CACHE from "./cache.js";
 
 //All the DOM functionality and control of the application happens in this file
 //All the code dealing with the Cache is in the cache.js file.
 const APP = {
   itemList: [],
-  activeLI: '',
+  activeLI: "",
   init() {
     //page loaded
-    document.getElementById('itemForm').addEventListener('submit', APP.addItem);
-    document.getElementById('btnItem').addEventListener('click', APP.addItem);
-    document.getElementById('btnList').addEventListener('click', APP.saveListAsFile);
+    CACHE.init();
+    document.getElementById("itemForm").addEventListener("submit", APP.addItem);
+    document.getElementById("btnItem").addEventListener("click", APP.addItem);
+    document
+      .getElementById("btnList")
+      .addEventListener("click", APP.saveListAsFile);
     //access the cache
     //then display files
     //and then show all the current files
+
+    //add dummy values
+    APP.itemList.push(`Random number - ${Math.random()}`);
+    APP.itemList.push(`Random number - ${Math.random()}`);
+    APP.itemList.push(`Random number - ${Math.random()}`);
+    APP.displayList();
   },
   addItem(ev) {
     //add an item to the list
     ev.preventDefault();
-    let item = document.getElementById('gItem').value;
+    let item = document.getElementById("gItem").value;
     item = item.trim();
     if (!item) return;
     APP.itemList.push(item);
@@ -25,31 +34,54 @@ const APP = {
   },
   displayList() {
     //populate the list of items
-    let list = document.getElementById('item_list');
+    let list = document.getElementById("item_list");
     if (APP.itemList.length === 0) {
-      list.innerHTML = 'No Items currently.';
+      list.innerHTML = "No Items currently.";
     } else {
       list.innerHTML = APP.itemList
         .map((txt) => {
           return `<li>${txt}</li>`;
         })
-        .join('');
+        .join("");
     }
-    document.getElementById('gItem').value = '';
+    document.getElementById("gItem").value = "";
   },
   saveListAsFile(ev) {
     ev.preventDefault();
+
     //turn the data from the list into the contents for a json file
+    const itemsObj = JSON.stringify(APP.itemList);
+
     //and then create a file with the json
-    //and then create a response object to hold the file
-    //and then save the response in the cache
-  },
-  saveFile(filename, response) {
+    const nowValue = Date.now();
+    let data = itemsObj;
+
+    let filename = `items_${nowValue}.json`;
+    let file = new File([data], filename, {
+      type: "text/plain",
+      lastModified: nowValue,
+    });
     //create a url or request object
+    let response = new Response(file, {
+      status: 200,
+      statusText: "OK",
+    });
+
+    APP.saveFile(file, response);
+  },
+
+  saveFile(file, response) {
     //save the file in the Cache
     //when file has been saved,
     //clear the displayed list
     //and then update the list of files
+    let request = new Request(file.filename);
+    CACHE.put(request, response)
+      .then(() => {
+        APP.itemList = [];
+        APP.displayList();
+      })
+      .catch((err) => {});
   },
   getFiles() {
     //display all the files in the cache
@@ -72,4 +104,4 @@ const APP = {
   },
 };
 
-document.addEventListener('DOMContentLoaded', APP.init);
+document.addEventListener("DOMContentLoaded", APP.init);
