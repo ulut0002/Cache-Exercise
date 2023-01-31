@@ -1,13 +1,3 @@
-//file for all the cache functionality
-// caches.open()
-// caches.keys()
-// caches.delete()
-// caches.matchAll()
-
-// cache.put()
-// cache.match()
-const log = console.log;
-
 const CACHE = {
   cacheVersion: 1,
   cacheName: null, //this gets set in the init() method
@@ -16,12 +6,11 @@ const CACHE = {
   initiated: false,
   init() {
     CACHE.cacheName = `filecache-${CACHE.userName}-${CACHE.cacheVersion}`;
-    // console.log)CACHE.open(CACHE.cacheName);
   },
   open(cacheName) {
     return new Promise(function (resolve, reject) {
       if (!cacheName) {
-        reject(new Error("Cache name is missing"));
+        reject(new Error("Specify cache name"));
       }
 
       if (CACHE.cacheObj) {
@@ -38,14 +27,31 @@ const CACHE = {
     });
   },
   put(request, response) {
+    // console.log("inside put ", request, response);
     return CACHE.open(CACHE.cacheName)
       .then((cache) => {
         return cache.put(request, response);
       })
-      .catch((err) => {});
+      .catch((err) => {
+        throw err;
+      });
   },
   keys() {
-    return CACHE.open(CACHE.cacheName).then().keys();
+    return caches.open(CACHE.cacheName).then((cache) => {
+      return cache.keys();
+    });
+  },
+  delete(name) {
+    return caches.delete(name);
+  },
+  matchAll(request) {
+    return caches.matchAll(request);
+  },
+
+  match(request) {
+    return CACHE.open(CACHE.cacheName).then((cache) => {
+      return cache.match(request);
+    });
   },
 };
 

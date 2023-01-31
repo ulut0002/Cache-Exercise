@@ -4,6 +4,7 @@ import CACHE from "./cache.js";
 //All the code dealing with the Cache is in the cache.js file.
 const APP = {
   itemList: [],
+  fileList: [],
   activeLI: "",
   init() {
     //page loaded
@@ -13,6 +14,7 @@ const APP = {
     document
       .getElementById("btnList")
       .addEventListener("click", APP.saveListAsFile);
+
     //access the cache
     //then display files
     //and then show all the current files
@@ -22,6 +24,9 @@ const APP = {
     APP.itemList.push(`Random number - ${Math.random()}`);
     APP.itemList.push(`Random number - ${Math.random()}`);
     APP.displayList();
+
+    // APP.displayFiles();
+    APP.getFiles();
   },
   addItem(ev) {
     //add an item to the list
@@ -61,35 +66,77 @@ const APP = {
       type: "text/plain",
       lastModified: nowValue,
     });
+
     //create a url or request object
     let response = new Response(file, {
       status: 200,
       statusText: "OK",
+      header: {
+        "content-type": file.type,
+        "content-length": file.length,
+        "X-file": file.name,
+      },
     });
 
     APP.saveFile(file, response);
   },
 
-  saveFile(file, response) {
+  async saveFile(file, response) {
     //save the file in the Cache
     //when file has been saved,
     //clear the displayed list
     //and then update the list of files
-    let request = new Request(file.filename);
-    CACHE.put(request, response)
+    let request = new Request(new URL(`${file.name}`, location.origin));
+    await CACHE.put(request, response)
       .then(() => {
         APP.itemList = [];
         APP.displayList();
       })
       .catch((err) => {});
+
+    await APP.getFiles();
+    // APP.displayFiles();
   },
+
   getFiles() {
     //display all the files in the cache
     //loop through response matches and display the file names
+    APP.fileList = [];
+
+    CACHE.keys()
+      .then((keys) => {
+        let promises = keys.map((key) => {
+          return CACHE.match(key.url).then((response) => {
+            // console.log("here..", key.url);
+            APP.fileList.push(key.url);
+          });
+        });
+        return Promise.all(promises);
+      })
+      .then(() => {
+        // console.log("list", APP.fileList);
+        this.displayFiles(APP.fileList);
+      })
+      .catch((err) => {
+        console.error(err);
+      });
   },
   displayFiles(matches) {
     //show the file names from the cache as a list.
     //each list item contains a span for the file name plus a button for deleting the file from the cache
+
+    // console.log("here");
+    let list = document.getElementById("file_list");
+    if (matches.length === 0) {
+      list.innerHTML = "No Files currently.";
+    } else {
+      list.innerHTML = matches
+        .map((txt) => {
+          return `<li>${txt} <span id="delete">Delete</span></li>`;
+        })
+        .join("");
+    }
+    // document.getElementById("gItem").value = "";
   },
   displayFileContents(ev) {
     //get the list item from the file
