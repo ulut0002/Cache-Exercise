@@ -1,5 +1,7 @@
 import CACHE from "./cache.js";
 
+CACHE.open();
+CACHE.put();
 //All the DOM functionality and control of the application happens in this file
 //All the code dealing with the Cache is in the cache.js file.
 const APP = {
@@ -26,7 +28,7 @@ const APP = {
     APP.displayList();
 
     // APP.displayFiles();
-    APP.getFiles();
+    // APP.getFiles();
   },
   addItem(ev) {
     //add an item to the list
@@ -37,20 +39,7 @@ const APP = {
     APP.itemList.push(item);
     APP.displayList();
   },
-  displayList() {
-    //populate the list of items
-    let list = document.getElementById("item_list");
-    if (APP.itemList.length === 0) {
-      list.innerHTML = "No Items currently.";
-    } else {
-      list.innerHTML = APP.itemList
-        .map((txt) => {
-          return `<li>${txt}</li>`;
-        })
-        .join("");
-    }
-    document.getElementById("gItem").value = "";
-  },
+
   saveListAsFile(ev) {
     ev.preventDefault();
 
@@ -78,49 +67,67 @@ const APP = {
       },
     });
 
-    APP.saveFile(file, response);
+    APP.saveFile(file, response)
+      .then(() => {
+        //file is saved..
+        APP.itemList = [];
+        return APP.getFiles();
+      })
+      .then((filesArr) => {
+        console.log("Files array ", filesArr);
+        APP.displayFiles();
+      });
   },
 
-  async saveFile(file, response) {
+  //TODO:
+
+  saveFile(file, response) {
     //save the file in the Cache
     //when file has been saved,
     //clear the displayed list
     //and then update the list of files
-    let request = new Request(new URL(`${file.name}`, location.origin));
-    await CACHE.put(request, response)
-      .then(() => {
-        APP.itemList = [];
-        APP.displayList();
-      })
-      .catch((err) => {});
-
-    await APP.getFiles();
-    // APP.displayFiles();
+    const promise = new Promise(function (resolve, reject) {
+      let request = new Request(new URL(`${file.name}`, location.origin));
+      CACHE.put(request, response)
+        .then(() => {
+          resolve();
+        })
+        .catch((err) => {
+          reject(err);
+        });
+    });
+    return promise;
   },
 
   getFiles() {
     //display all the files in the cache
     //loop through response matches and display the file names
     APP.fileList = [];
-
     CACHE.keys()
       .then((keys) => {
-        let promises = keys.map((key) => {
-          return CACHE.match(key.url).then((response) => {
-            // console.log("here..", key.url);
-            APP.fileList.push(key.url);
-          });
-        });
-        return Promise.all(promises);
-      })
-      .then(() => {
-        // console.log("list", APP.fileList);
-        this.displayFiles(APP.fileList);
+        let promiseArray = keys.map((key) => CACHE.match(key.url));
+        return Promise.all(promiseArray);
       })
       .catch((err) => {
         console.error(err);
       });
   },
+
+  displayList() {
+    //populate the list of items
+    let list = document.getElementById("item_list");
+    if (APP.itemList.length === 0) {
+      list.innerHTML = "No Items currently.";
+    } else {
+      list.innerHTML = APP.itemList
+        .map((txt) => {
+          return `<li>${txt}</li>`;
+        })
+        .join("");
+    }
+    document.getElementById("gItem").value = "";
+  },
+
   displayFiles(matches) {
     //show the file names from the cache as a list.
     //each list item contains a span for the file name plus a button for deleting the file from the cache
@@ -138,6 +145,7 @@ const APP = {
     }
     // document.getElementById("gItem").value = "";
   },
+
   displayFileContents(ev) {
     //get the list item from the file
     //and show its contents in the <pre><code> area

@@ -3,10 +3,13 @@ const CACHE = {
   cacheName: null, //this gets set in the init() method
   userName: "ulut0002", //replace this with your own username
   cacheObj: null,
-  initiated: false,
-  init() {
+  init(name) {
     CACHE.cacheName = `filecache-${CACHE.userName}-${CACHE.cacheVersion}`;
+    if (name) {
+      CACHE.cacheName = name;
+    }
   },
+
   open(cacheName) {
     return new Promise(function (resolve, reject) {
       if (!cacheName) {
@@ -27,7 +30,6 @@ const CACHE = {
     });
   },
   put(request, response) {
-    // console.log("inside put ", request, response);
     return CACHE.open(CACHE.cacheName)
       .then((cache) => {
         return cache.put(request, response);
@@ -37,7 +39,7 @@ const CACHE = {
       });
   },
   keys() {
-    return caches.open(CACHE.cacheName).then((cache) => {
+    return CACHE.open(CACHE.cacheName).then((cache) => {
       return cache.keys();
     });
   },
