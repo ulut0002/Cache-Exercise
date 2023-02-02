@@ -10,17 +10,13 @@ const CACHE = {
     }
   },
 
-  open(cacheName) {
+  open() {
     return new Promise(function (resolve, reject) {
-      if (!cacheName) {
-        reject(new Error("Specify cache name"));
-      }
-
       if (CACHE.cacheObj) {
         resolve(CACHE.cacheObj);
       } else {
         caches
-          .open(cacheName)
+          .open(CACHE.cacheName)
           .then((result) => {
             CACHE.cacheObj = result;
             resolve(result);
@@ -44,10 +40,14 @@ const CACHE = {
     });
   },
   delete(name) {
-    return caches.delete(name);
+    return caches.open(CACHE.cacheName).then((cache) => {
+      return cache.delete(name);
+    });
   },
-  matchAll(request) {
-    return caches.matchAll(request);
+  matchAll(requestArr) {
+    return CACHE.open(CACHE.cacheName).then((cache) => {
+      return cache.matchAll(requestArr);
+    });
   },
 
   match(request) {

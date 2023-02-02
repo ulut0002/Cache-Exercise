@@ -1,7 +1,5 @@
 import CACHE from "./cache.js";
 
-CACHE.open();
-CACHE.put();
 //All the DOM functionality and control of the application happens in this file
 //All the code dealing with the Cache is in the cache.js file.
 const APP = {
@@ -17,18 +15,31 @@ const APP = {
       .getElementById("btnList")
       .addEventListener("click", APP.saveListAsFile);
 
-    //access the cache
-    //then display files
-    //and then show all the current files
+    document.getElementById("file_list").addEventListener("click", (ev) => {
+      if (ev.target.dataset.action) {
+        if (ev.target.dataset.action.toLowerCase() === "display") {
+          APP.displayFileContents(ev);
+        } else if (ev.target.dataset.action.toLowerCase() === "delete") {
+          APP.deleteFile(ev);
+        }
+      }
+    });
 
-    //add dummy values
+    //add dummy values for quick testing
     APP.itemList.push(`Random number - ${Math.random()}`);
     APP.itemList.push(`Random number - ${Math.random()}`);
     APP.itemList.push(`Random number - ${Math.random()}`);
     APP.displayList();
+    //End of test code
 
-    // APP.displayFiles();
-    // APP.getFiles();
+    // Get current files, and display them as a list with a  Delete button
+    APP.getFiles().then((fileArr) => {
+      APP.fileList = [];
+      fileArr.forEach((file) => {
+        APP.fileList.push(file.headers.get("X-file"));
+      });
+      APP.displayFiles(APP.fileList);
+    });
   },
   addItem(ev) {
     //add an item to the list
@@ -41,56 +52,69 @@ const APP = {
   },
 
   saveListAsFile(ev) {
+    //turn the data from the list into the contents for a json file
+    //and then create a file with the json
+    //and then create a response object to hold the file
+    //and then save the response in the cache
     ev.preventDefault();
 
-    //turn the data from the list into the contents for a json file
-    const itemsObj = JSON.stringify(APP.itemList);
+    if (!APP.itemList || APP.itemList.length === 0) {
+      return;
+    }
 
-    //and then create a file with the json
-    const nowValue = Date.now();
-    let data = itemsObj;
+    const data = JSON.stringify(APP.itemList);
+    const timestamp = Date.now();
+    const filename = `items_${timestamp}.json`;
 
-    let filename = `items_${nowValue}.json`;
-    let file = new File([data], filename, {
-      type: "text/plain",
-      lastModified: nowValue,
+    const file = new File([data], filename, {
+      type: "application/json",
     });
 
-    //create a url or request object
-    let response = new Response(file, {
+    const response = new Response(file, {
       status: 200,
-      statusText: "OK",
-      header: {
+      statusText: "Ok",
+      headers: {
         "content-type": file.type,
         "content-length": file.length,
         "X-file": file.name,
+        "X-length": APP.itemList.length,
       },
     });
 
+    let clone = response.clone();
+
     APP.saveFile(file, response)
       .then(() => {
-        //file is saved..
+        //file is saved.. Clear the list and return list of current files
         APP.itemList = [];
         return APP.getFiles();
       })
       .then((filesArr) => {
-        console.log("Files array ", filesArr);
-        APP.displayFiles();
+        APP.getFiles().then((fileArr) => {
+          APP.fileList = [];
+          fileArr.forEach((file) => {
+            APP.fileList.push(file.headers.get("X-file"));
+            APP.displayFiles(APP.fileList);
+
+            APP.itemList = [];
+            APP.displayList();
+          });
+        });
       });
   },
-
-  //TODO:
 
   saveFile(file, response) {
     //save the file in the Cache
     //when file has been saved,
     //clear the displayed list
     //and then update the list of files
+
+    const url = new URL(`${file.name}`, location.origin);
+
     const promise = new Promise(function (resolve, reject) {
-      let request = new Request(new URL(`${file.name}`, location.origin));
-      CACHE.put(request, response)
+      CACHE.put(url, response)
         .then(() => {
-          resolve();
+          resolve(true);
         })
         .catch((err) => {
           reject(err);
@@ -102,14 +126,15 @@ const APP = {
   getFiles() {
     //display all the files in the cache
     //loop through response matches and display the file names
-    APP.fileList = [];
-    CACHE.keys()
+    return CACHE.keys()
       .then((keys) => {
         let promiseArray = keys.map((key) => CACHE.match(key.url));
+        // console.log("promise array ", promiseArray);
         return Promise.all(promiseArray);
       })
       .catch((err) => {
         console.error(err);
+        throw err;
       });
   },
 
@@ -132,14 +157,14 @@ const APP = {
     //show the file names from the cache as a list.
     //each list item contains a span for the file name plus a button for deleting the file from the cache
 
-    // console.log("here");
     let list = document.getElementById("file_list");
     if (matches.length === 0) {
       list.innerHTML = "No Files currently.";
     } else {
       list.innerHTML = matches
         .map((txt) => {
-          return `<li>${txt} <span id="delete">Delete</span></li>`;
+          return `<li data-ref="${txt}"><span data-action="display">${txt}</span> 
+                  <button data-action="delete" class="delete">Delete</button></li>`;
         })
         .join("");
     }
@@ -149,9 +174,52 @@ const APP = {
   displayFileContents(ev) {
     //get the list item from the file
     //and show its contents in the <pre><code> area
+    let contentText = "";
+    const paragraphEl = document.querySelector(".data_display > pre > code");
+
+    const el = ev.target.closest("li[data-ref]");
+    if (el && el.dataset.ref) {
+      // console.log(el.dataset.ref);
+      const url = new URL(el.dataset.ref, location.origin);
+      CACHE.match(url)
+        .then((element) => {
+          return element.json();
+        })
+        .then((content) => {
+          // console.log(content);
+          if (Array.isArray(content)) {
+            contentText = content
+              .map((item) => {
+                return `<li>${item}</li>`;
+              })
+              .join("");
+          } else {
+            contentText = content;
+          }
+          if (!contentText) contentText = "File is empty";
+          paragraphEl.innerHTML = contentText;
+        });
+    }
   },
   deleteFile(ev) {
     ev.preventDefault();
+
+    const el = ev.target.closest("li[data-ref]");
+    if (el && el.dataset.ref) {
+      CACHE.delete(el.dataset.ref)
+        .then(() => {
+          // console.log("deleted");
+          return APP.getFiles();
+        })
+        .then((fileArr) => {
+          APP.fileList = [];
+          fileArr.forEach((file) => {
+            APP.fileList.push(file.headers.get("X-file"));
+          });
+          APP.displayFiles(APP.fileList);
+        });
+    }
+
     //user has clicked on a button in the file list
     //delete the file from the cache using the file name
     //remove the list item from the list if successful
