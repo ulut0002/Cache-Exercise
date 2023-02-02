@@ -1,5 +1,7 @@
 import CACHE from "./cache.js";
 
+//
+
 //All the DOM functionality and control of the application happens in this file
 //All the code dealing with the Cache is in the cache.js file.
 const APP = {
@@ -81,8 +83,6 @@ const APP = {
       },
     });
 
-    let clone = response.clone();
-
     APP.saveFile(file, response)
       .then(() => {
         //file is saved.. Clear the list and return list of current files
@@ -94,11 +94,10 @@ const APP = {
           APP.fileList = [];
           fileArr.forEach((file) => {
             APP.fileList.push(file.headers.get("X-file"));
-            APP.displayFiles(APP.fileList);
-
-            APP.itemList = [];
-            APP.displayList();
           });
+          APP.displayFiles(APP.fileList);
+          APP.itemList = [];
+          APP.displayList();
         });
       });
   },
@@ -110,7 +109,6 @@ const APP = {
     //and then update the list of files
 
     const url = new URL(`${file.name}`, location.origin);
-
     const promise = new Promise(function (resolve, reject) {
       CACHE.put(url, response)
         .then(() => {
@@ -163,8 +161,10 @@ const APP = {
     } else {
       list.innerHTML = matches
         .map((txt) => {
-          return `<li data-ref="${txt}"><span data-action="display">${txt}</span> 
-                  <button data-action="delete" class="delete">Delete</button></li>`;
+          return `<li data-ref="${txt}">
+                    <span data-action="display">${txt}</span> 
+                    <button data-action="delete" class="delete">Delete</button>
+                  </li>`;
         })
         .join("");
     }
