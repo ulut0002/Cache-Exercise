@@ -134,7 +134,7 @@ const APP = {
       list.innerHTML = matches
         .map((txt) => {
           return `<li data-ref="${txt}">
-                    <span data-action="display">${txt}</span> 
+                    <span data-action="display" class="filename">${txt}</span> 
                     <button data-action="delete" class="delete">Delete</button>
                   </li>`;
         })

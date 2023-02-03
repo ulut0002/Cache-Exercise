@@ -59,6 +59,9 @@ li {
 #file_list {
   cursor: pointer;
 }
+.filename:hover {
+  color: orangered;
+}
 #file_list span:hover,
 #file_list li.active {
 }
