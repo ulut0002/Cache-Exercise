@@ -1,7 +1,5 @@
 import CACHE from "./cache.js";
 
-//
-
 //All the DOM functionality and control of the application happens in this file
 //All the code dealing with the Cache is in the cache.js file.
 const APP = {
@@ -9,8 +7,9 @@ const APP = {
   fileList: [],
   init() {
     //page loaded
-    // CACHE.init().then(() => APP.getFiles());
-    CACHE.init().then(APP.getFiles);
+    // CACHE.init().then(APP.getFiles);
+
+    const initPromise = CACHE.init();
 
     document.getElementById("itemForm").addEventListener("submit", APP.addItem);
     document.getElementById("btnItem").addEventListener("click", APP.addItem);
@@ -40,6 +39,8 @@ const APP = {
     // APP.itemList.push(`Random number - ${Math.random()}`);
     // APP.displayList();
     //End of test code
+
+    initPromise.then(APP.getFiles);
   },
   addItem(ev) {
     //add an item to the list
@@ -52,10 +53,6 @@ const APP = {
   },
 
   saveListAsFile(ev) {
-    //turn the data from the list into the contents for a json file
-    //and then create a file with the json
-    //and then create a response object to hold the file
-    //and then save the response in the cache
     ev.preventDefault();
 
     if (!APP.itemList || APP.itemList.length === 0) {
@@ -152,29 +149,28 @@ const APP = {
     paragraphEl.innerHTML = contentText;
 
     //function can be called with null parameter to clean the list
-    if (!ev) return;
-    const el = ev.target.closest("li[data-ref]");
-    if (el && el.dataset.ref) {
-      // console.log(el.dataset.ref);
-      const url = new URL(el.dataset.ref, location.origin);
-      CACHE.match(url)
-        .then((element) => {
-          return element.json();
-        })
-        .then((content) => {
-          // console.log(content);
-          if (Array.isArray(content)) {
-            contentText = content
-              .map((item) => {
-                return `<li>${item}</li>`;
-              })
-              .join("");
-          } else {
-            contentText = content;
-          }
-          if (!contentText) contentText = "File is empty";
-          paragraphEl.innerHTML = contentText;
-        });
+    if (ev) {
+      const el = ev.target.closest("li[data-ref]");
+      if (el && el.dataset.ref) {
+        const url = new URL(el.dataset.ref, location.origin);
+        CACHE.match(url)
+          .then((element) => {
+            return element.json();
+          })
+          .then((content) => {
+            if (Array.isArray(content)) {
+              contentText = content
+                .map((item) => {
+                  return `<li>${item}</li>`;
+                })
+                .join("");
+            } else {
+              contentText = content;
+            }
+            if (!contentText) contentText = "File is empty";
+            paragraphEl.innerHTML = contentText;
+          });
+      }
     }
   },
   deleteFile(ev) {
