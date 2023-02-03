@@ -178,10 +178,14 @@ const APP = {
 
     const el = ev.target.closest("li[data-ref]");
     if (el && el.dataset.ref) {
-      CACHE.delete(el.dataset.ref).then(() => {
-        APP.getFiles();
-        APP.displayFileContents(null);
-      });
+      CACHE.delete(el.dataset.ref)
+        .then(() => {
+          APP.getFiles();
+          APP.displayFileContents(null);
+        })
+        .catch((err) => {
+          console.warn(err);
+        });
     }
   },
 };
