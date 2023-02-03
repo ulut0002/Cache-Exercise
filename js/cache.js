@@ -5,87 +5,40 @@ const CACHE = {
   cacheObj: null,
   init(name) {
     CACHE.cacheName = `filecache-${CACHE.userName}-${CACHE.cacheVersion}`;
-    if (name) {
-      CACHE.cacheName = name;
-    }
+    if (name) CACHE.cacheName = name;
+
+    const promise = new Promise(function (resolve, reject) {
+      CACHE.open()
+        .then((cache) => {
+          CACHE.cacheObj = cache;
+          resolve(cache);
+        })
+        .catch((err) => {
+          reject(err);
+        });
+    });
+    return promise;
   },
 
   open() {
-    const promise = new Promise(function (resolve, reject) {
-      if (CACHE.cacheObj) {
-        resolve(CACHE.cacheObj);
-      } else {
-        caches
-          .open(CACHE.cacheName)
-          .then((result) => {
-            CACHE.cacheObj = result;
-            resolve(result);
-          })
-          .catch((error) => reject(error));
-      }
-    });
-    return promise;
+    return caches.open(CACHE.cacheName);
   },
   put(request, response) {
-    const promise = new Promise(function (resolve, reject) {
-      CACHE.open(CACHE.cacheName)
-        .then((cache) => {
-          resolve(cache.put(request, response));
-        })
-        .catch((err) => {
-          reject(err);
-        });
-    });
-    return promise;
+    return CACHE.cacheObj.put(request, response);
   },
   keys() {
-    const promise = new Promise(function (resolve, reject) {
-      CACHE.open(CACHE.cacheName)
-        .then((cache) => {
-          resolve(cache.keys());
-        })
-        .catch((err) => {
-          reject(err);
-        });
-    });
-    return promise;
+    return CACHE.cacheObj.keys();
   },
   delete(name) {
-    const promise = new Promise(function (resolve, reject) {
-      caches
-        .open(CACHE.cacheName)
-        .then((cache) => {
-          resolve(cache.delete(name));
-        })
-        .catch((err) => {
-          reject(err);
-        });
-    });
-    return promise;
+    return CACHE.cacheObj.delete(name);
   },
 
   matchAll(requestArr) {
-    const promise = new Promise(function (resolve, reject) {
-      CACHE.open(CACHE.cacheName)
-        .then((cache) => {
-          resolve(cache.matchAll(requestArr));
-        })
-        .catch((err) => {
-          reject(err);
-        });
-    });
-    return promise;
+    return CACHE.cacheObj.matchAll(requestArr);
   },
 
   match(request) {
-    const promise = new Promise(function (resolve, reject) {
-      CACHE.open(CACHE.cacheName)
-        .then((cache) => {
-          resolve(cache.match(request));
-        })
-        .catch((err) => reject(err));
-    });
-    return promise;
+    return CACHE.cacheObj.match(request);
   },
 };
 
