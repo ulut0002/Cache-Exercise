@@ -101,13 +101,17 @@ const APP = {
         return Promise.all(promiseArray);
       })
       .then((files) => {
+        console.log("files... ", files);
         APP.fileList = [];
         files.forEach((file) => APP.fileList.push(file.headers.get("X-file")));
+        console.log("files ends... ", APP.fileList);
       })
       .catch((err) => {
+        console.log("getFiles().catch: ", err);
         console.warn(err);
       })
       .finally(() => {
+        console.log("finallty(): ", APP.fileList);
         APP.displayFiles(APP.fileList);
       });
   },
