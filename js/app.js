@@ -185,7 +185,7 @@ const APP = {
     if (el && el.dataset.ref) {
       console.log("inside if: ");
 
-      CACHE.delete(el.dataset.ref)
+      CACHE.delete(`/${el.dataset.ref}`)
         .then(() => {
           console.log("inside delete().then: ");
           APP.getFiles();
