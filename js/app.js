@@ -177,9 +177,13 @@ const APP = {
     ev.preventDefault();
 
     const el = ev.target.closest("li[data-ref]");
+    console.log("el: ", el);
     if (el && el.dataset.ref) {
+      console.log("inside if: ");
+
       CACHE.delete(el.dataset.ref)
         .then(() => {
+          console.log("inside delete().then: ");
           APP.getFiles();
           APP.displayFileContents(null);
         })
