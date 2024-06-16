@@ -1,22 +1,15 @@
 # Cache Exercise
 
-This repository contains an implementation of a basic caching mechanism. The purpose of this exercise is to demonstrate the principles of caching and how it can be utilized to improve performance in various applications.
+This repository contains an implementation of a basic caching mechanism. The purpose of this exercise is to demonstrate the principles of caching and how it can be utilized to improve performance in various applications. With this small app, users can create a temporary list and save it as an entity in the cache. The list of stored lists is displayed under "File List." Users can delete an existing list or click on a list to display its contents.
+
+This demo represents a "local first" philosophy.
 
 ## Table of Contents
 
-- [Introduction](#introduction)
 - [Features](#features)
 - [Installation](#installation)
 - [Usage](#usage)
-- [Examples](#examples)
-- [Contributing](#contributing)
 - [License](#license)
-
-## Introduction
-
-Caching is a technique used to store frequently accessed data in a temporary storage area, so it can be quickly retrieved when needed. This can significantly reduce the time required to access data and improve the overall performance of an application.
-
-This repository provides a simple implementation of a cache in JavaScript. The cache stores key-value pairs and supports basic operations like adding, retrieving, and deleting entries.
 
 ## Features
 
